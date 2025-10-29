@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+<data noupdate="0">
+	
+	<record id="category_dashboard" model="ir.module.category">
+        <field name="name">Dashboard</field>
+    </record>
+    
+    <record id="dashboard_user" model="res.groups">
+        <field name="name">Dashboard Users</field>
+        <field name="category_id" ref="category_dashboard"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+    <record id="dashboard_manager" model="res.groups">
+        <field name="name">Dashboard Managers</field>
+        <field name="category_id" ref="category_dashboard"/>
+        <field name="users" eval="[(4, ref('base.user_root'))]"/>
+        <field name="implied_ids" eval="[(4, ref('dashboard.dashboard_user'))]"/>
+    </record>
+
+
+
+
+
+            <record model="ir.module.category" id="module_category_top_management">
+                <field name="name">Top Management</field> 
+                <field name="category_id" ref="module_category_leih"/>
+                <field name="sequence">15</field>
+            </record>
+
+                    <record id="group_top_management" model="res.groups">
+                    <field name="name">Top Managmenet</field>
+                    <field name="category_id" ref="module_category_top_management"/>
+                    <field name="users" eval="[(4, ref('base.user_root'))]"/>
+                </record>
+
+</data>
+</openerp>

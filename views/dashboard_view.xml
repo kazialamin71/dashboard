@@ -110,15 +110,8 @@
 			web_icon="dashboard,static/description/icon.png"/>
 		<menuitem id="dashboard_menu" name="Dashboard" parent="dashboard_root"
 			sequence="1"/>
-		<menuitem id="dashboard_ss_menu" name="Patient Info" parent="dashboard_menu"
+		<menuitem id="dashboard_ss_menu" name="Management Dashboard" parent="dashboard_menu"
 			action="dashboard_action_view" sequence="1"/>
-		<menuitem id="dashboard_sub_menu2" name="Appointment Info" parent="dashboard_menu"
-			action="dashboard_action_view" sequence="2"/>
-		<menuitem id="dashboard_sub_menu3" name="Investigation Info" parent="dashboard_menu"
-			action="dashboard_action_view" sequence="3"/>
-		<menuitem id="dashboard_sub_menu4" name="Admission Info" parent="dashboard_menu"
-			action="dashboard_action_view" sequence="4"/>
-		<menuitem id="dashboard_sub_menu5" name="OT Info" parent="dashboard_menu"
-			action="dashboard_action_view" sequence="5"/>
+		
 	</data>
 </openerp>

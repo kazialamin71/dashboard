@@ -24,45 +24,37 @@
 										customize
 									</button>
 								</div>
-								<div class="row col-xs-12">
-									<div t-foreach="record.field_list.selection" class="col-lg-3 col-md-6"
-										t-as="field">
-										<div t-att-class="'panel panel-'+field[2]">
-											<div class="panel-heading">
-												<div class="row">
-													<div class="col-xs-3">
-														<i t-att-class="'fa fa-5x '+field[3]"></i>
-													</div>
-													<div class="col-xs-9 text-right">
-														<div class="huge">
-															<span>
-																<t t-esc="field[0]"/>
-															</span>
-														</div>
-														<div>
-															<span>
-																<h4>
-																	<t t-esc="field[1]"/>
-																</h4>
-															</span>
-														</div>
-													</div>
-												</div>
-											</div>
-											<!-- <button name="view_details" type="object" t-att-context="'{action:' +field[4]+'}'"       
-												class="detail col-xs-12"> -->
-												<a type="object" name="view_details" t-att-data-context="`{'action_id':`+field[4]+`,'active_ids':[`+field[5]+`]}`" >
-												<div class="panel-footer">
-													<span class="pull-left">View Details</span>
-													<span class="pull-right">
-														<i class="fa fa-arrow-circle-right"></i>
-													</span>
-													<div class="clearfix"></div>
-												</div>
-											</a>
-										</div>
-									</div>
-								</div>
+								<div class="row">
+    <div t-foreach="record.field_list.selection" t-as="field" class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
+        <div t-att-class="'panel panel-' + field[2]">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <i t-att-class="'fa fa-5x ' + field[3]"></i>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <div class="huge">
+                            <t t-esc="field[0]" />
+                        </div>
+                        <h4><t t-esc="field[1]" /></h4>
+                    </div>
+                </div>
+            </div>
+
+            <a type="object" name="view_details"
+               t-att-data-context="`{'action_id':` + field[4] + `,'active_ids':[` + field[5] + `]}`">
+                <div class="panel-footer">
+                    <span class="pull-left">View Details</span>
+                    <span class="pull-right">
+                        <i class="fa fa-arrow-circle-right"></i>
+                    </span>
+                    <div class="clearfix"></div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
 								<!-- /.row -->
 								<div class="row col-xs-12">
 									<div t-foreach="record.chart_list.selection" t-as="chart"

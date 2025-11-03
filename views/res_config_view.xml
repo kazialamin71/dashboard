@@ -17,6 +17,7 @@
 						<h4>Icon picker:</h4>
 						<input type="text" class="input1 input"/>
 					</div>
+					<field name="date_mode"/>
 					<field name="line_ids">
 						<tree editable="bottom">
 							<field name="name"/>

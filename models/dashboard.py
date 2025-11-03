@@ -16,7 +16,11 @@ class Dashboard(models.Model):
         dashboard = self.env['dashboard.settings'].search([], limit=1, order='id desc')
         lists = dashboard.line_ids
         last_slices_list = []
-        today = date.today().strftime("'%Y-%m-%d'")  # e.g., '2025-10-17'
+        if dashboard.date_mode == 'yesterday':
+            target_date = (date.today() - datetime.timedelta(days=1)).strftime("'%Y-%m-%d'")
+        else:
+            target_date = date.today().strftime("'%Y-%m-%d'")
+
 
         for list in lists:
             if not list.display:
@@ -39,7 +43,7 @@ class Dashboard(models.Model):
             requete_action = "SELECT id as id FROM {0}".format(base_model)
 
             # Replace placeholder {today} with actual date string
-            dynamic_filter = list.filter.replace("{today}", today) if list.filter else False
+            dynamic_filter = list.filter.replace("{today}", target_date) if list.filter else False
 
             # --- Detect relation in filter (e.g., bill_register_line.department ...)
             join_clause = ""

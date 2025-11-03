@@ -18,11 +18,16 @@ class DashboardSettings(models.Model):
         return self.search([],limit=1,order='id desc').chart_ids.ids
     
     name=fields.Char('Name',default="Setting")
+    date_mode = fields.Selection([
+        ('today', 'Today'),
+        ('yesterday', 'Yesterday'),
+    ], string='Date Mode', default='today', help="Select which date to use for dashboard filters.")
     provider_latitude=fields.Char('latitude')
     provider_longitude=fields.Char('ongitude')
     map=fields.Char('ongitude')
     line_ids=fields.One2many('dashboard.settings.line','dashboard_id','Fields',default=get_default_lines)
     chart_ids=fields.One2many('dashboard.settings.chart','dashboard_id','Charts',default=get_default_chart)
+
     
 
 class DashboardSettingsLine(models.Model):

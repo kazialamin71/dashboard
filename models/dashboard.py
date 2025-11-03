@@ -12,6 +12,8 @@ class Dashboard(models.Model):
                 return True
         return False
 
+
+
     def _compute_field_list(self):
         dashboard = self.env['dashboard.settings'].search([], limit=1, order='id desc')
         lists = dashboard.line_ids
@@ -93,6 +95,8 @@ class Dashboard(models.Model):
         return last_slices_list
 
 
+    
+
 
     def _get_default_chart(self):
         chart_list = []
@@ -112,6 +116,28 @@ class Dashboard(models.Model):
     currency_id = fields.Many2one('res.currency', related='company_id.currency_id', store=True, string="Currency")
     field_list = fields.Selection(_compute_field_list, string='Slices names')
     chart_list = fields.Selection(_get_default_chart, string='Charts')
+    display_date_mode = fields.Char(string='Date Mode')
+
+
+    @api.depends('field_list')
+    def _compute_display_date_mode(self):
+        for record in self:
+            if record.chart_list == 'sales':
+                record.display_date_mode = 'Showing Data for: Today'
+            elif record.chart_list == 'profit':
+                record.display_date_mode = 'Showing Data for: Yesterday'
+            else:
+                record.display_date_mode = 'Showing Data'
+
+
+    @api.multi
+    def _compute_display_date_mode(self):
+        dashboard = self.env['dashboard.settings'].search([], limit=1, order='id desc')
+        mode_text = 'Showing Data for: Today'
+        for record in self:
+            import pdb;pdb.set_trace()
+            record.display_date_mode = mode_text
+
 
     @api.multi
     def action_setting(self):

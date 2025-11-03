@@ -9,10 +9,19 @@
 				<kanban create="false">
 					<field name="field_list"/>
 					<field name="chart_list"/>
+					<field name="display_date_mode"/>
 					<templates>
 						<t t-name="kanban-box">
 							<div class="o_kanban_view o_kanban_ungrouped o_kanban_record own">
 								<div class="row col-xs-12">
+								<!-- <t t-if="record.display_date_mode.raw_value">
+									<div class="alert alert-info text-center" style="font-size:16px; font-weight:bold; margin: 10px 0;"> -->
+									<t t-esc="record.display_date_mode.raw_value"/>
+
+									<!-- </div> -->
+								<!-- </t> -->
+
+
 									<button id="refresh"
 										class="btn btn-default btn-setting pull-right btn-dashboard">
 										<i class="fa fa-refresh"></i>
@@ -34,7 +43,7 @@
                     </div>
                     <div class="col-xs-9 text-right">
                         <div class="huge">
-                            <t t-esc="field[0]" />
+                            <t t-esc="field[0]"/>
                         </div>
                         <h4><t t-esc="field[1]" /></h4>
                     </div>

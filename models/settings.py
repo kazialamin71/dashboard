@@ -28,6 +28,15 @@ class DashboardSettings(models.Model):
     line_ids=fields.One2many('dashboard.settings.line','dashboard_id','Fields',default=get_default_lines)
     chart_ids=fields.One2many('dashboard.settings.chart','dashboard_id','Charts',default=get_default_chart)
 
+
+    @api.onchange('date_mode')
+    def onchange_date_mode(self):
+        if not self.date_mode:
+            return
+        dashboards = self.env['dashboard.dashboard'].search([])  # adjust domain if needed
+        value = 'Showing Data for: Today' if self.date_mode == 'today' else 'Showing Data for: Yesterday'
+        dashboards.write({'display_date_mode': value})
+
     
 
 class DashboardSettingsLine(models.Model):

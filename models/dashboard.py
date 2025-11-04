@@ -18,78 +18,77 @@ class Dashboard(models.Model):
         dashboard = self.env['dashboard.settings'].search([], limit=1, order='id desc')
         lists = dashboard.line_ids
         last_slices_list = []
+
+        # Determine dashboard date range
         if dashboard.date_mode == 'yesterday':
-            target_date = (date.today() - datetime.timedelta(days=1)).strftime("'%Y-%m-%d'")
+            target_date_start = target_date_end = (date.today() - timedelta(days=1)).strftime('%Y-%m-%d')
+        elif dashboard.date_mode == 'custom':
+            # dashboard.date_start and date_end are strings in Odoo 8
+            target_date_start = dashboard.date_start or date.today().strftime('%Y-%m-%d')
+            target_date_end = dashboard.date_end or date.today().strftime('%Y-%m-%d')
         else:
-            target_date = date.today().strftime("'%Y-%m-%d'")
+            target_date_start = target_date_end = date.today().strftime('%Y-%m-%d')
 
-
-        for list in lists:
-            if not list.display:
+        for lst in lists:
+            if not lst.display:
                 continue
 
-            # Base model table name
-            base_model = list.model_id.model.replace('.', '_')
+            base_model = lst.model_id.model.replace('.', '_')
+            date_field = lst.date_field_name or 'create_date'
 
             # Find window action
             action = self.env['ir.actions.act_window'].search(
-                [('res_model', '=', list.model_id.model), ('view_type', '=', 'form')], limit=1
+                [('res_model', '=', lst.model_id.model), ('view_type', '=', 'form')],
+                limit=1
             )
 
-            # Base queries
-            if list.type == 'money':
-                requete = "SELECT sum({0}) as field FROM {1}".format(list.field_id.name, base_model)
+            # Base query using str.format (Python 2.7 compatible)
+            if lst.type == 'money':
+                query = "SELECT sum({0}) as field FROM {1}".format(lst.field_id.name, base_model)
             else:
-                requete = "SELECT count({0}) as field FROM {1}".format(list.field_id.name, base_model)
+                query = "SELECT count({0}) as field FROM {1}".format(lst.field_id.name, base_model)
 
-            requete_action = "SELECT id as id FROM {0}".format(base_model)
+            query_action = "SELECT id as id FROM {0}".format(base_model)
 
-            # Replace placeholder {today} with actual date string
-            dynamic_filter = list.filter.replace("{today}", target_date) if list.filter else False
+            # Filter for non-date conditions
+            dynamic_filter = (lst.filter or "").strip()
 
-            # --- Detect relation in filter (e.g., bill_register_line.department ...)
-            join_clause = ""
-            if dynamic_filter and '.' in dynamic_filter:
-                first_part = dynamic_filter.split('.')[0]  # e.g., bill_register_line
-                # assume relation field is <base_model>_id
-                join_clause = " JOIN {0} ON {0}.{1}_id = {2}.id".format(
-                    first_part, base_model, base_model
-                )
-                # remove prefix for WHERE part
-                dynamic_filter = dynamic_filter.replace(first_part + ".", "")
+            # Build WHERE clause
+            where_clause_parts = []
 
-            # --- Build WHERE clause
-            where_clause = ""
-            if self.has_active(list.model_id) and dynamic_filter:
-                where_clause = " WHERE {0}.active=true AND {1}".format(base_model, dynamic_filter)
-            elif self.has_active(list.model_id):
-                where_clause = " WHERE {0}.active=true".format(base_model)
-            elif dynamic_filter:
-                where_clause = " WHERE {0}".format(dynamic_filter)
+            if self.has_active(lst.model_id):
+                where_clause_parts.append("{0}.active=true".format(base_model))
 
-            # --- Combine query
-            requete = requete + join_clause + where_clause
-            requete_action = requete_action + join_clause + where_clause
+            if dynamic_filter:
+                where_clause_parts.append(dynamic_filter)
 
+            # Always add dashboard date range on chosen date field
+            where_clause_parts.append(
+                "{0}.{1}::date BETWEEN '{2}' AND '{3}'".format(base_model, date_field, target_date_start, target_date_end)
+            )
 
-            # Execute SQL
-            print('----------------------------requete', requete)
-            self.env.cr.execute(requete.replace('"', "'"))
+            where_clause = " WHERE " + " AND ".join(where_clause_parts)
+
+            # Final queries
+            query = query + where_clause
+            query_action = query_action + where_clause
+
+            # Execute
+            self.env.cr.execute(query)
             result = self.env.cr.dictfetchall()[0]
-            field = result['field']
-        
+            field_value = result['field']
 
-            self.env.cr.execute(requete_action.replace('"', "'"))
+            self.env.cr.execute(query_action)
             result_ids = self.env.cr.dictfetchall()
             res_ids = [res['id'] for res in result_ids]
 
             last_slices_list.append([
-                field,
-                list.name or list.field_id.field_description,
-                list.color,
-                list.icon,
+                field_value,
+                lst.name or lst.field_id.field_description,
+                lst.color,
+                lst.icon,
                 action.id,
-                res_ids
+                res_ids,
             ])
 
         return last_slices_list
@@ -119,24 +118,8 @@ class Dashboard(models.Model):
     display_date_mode = fields.Char(string='Date Mode')
 
 
-    @api.depends('field_list')
-    def _compute_display_date_mode(self):
-        for record in self:
-            if record.chart_list == 'sales':
-                record.display_date_mode = 'Showing Data for: Today'
-            elif record.chart_list == 'profit':
-                record.display_date_mode = 'Showing Data for: Yesterday'
-            else:
-                record.display_date_mode = 'Showing Data'
 
 
-    @api.multi
-    def _compute_display_date_mode(self):
-        dashboard = self.env['dashboard.settings'].search([], limit=1, order='id desc')
-        mode_text = 'Showing Data for: Today'
-        for record in self:
-            import pdb;pdb.set_trace()
-            record.display_date_mode = mode_text
 
 
     @api.multi

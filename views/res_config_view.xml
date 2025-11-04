@@ -18,6 +18,10 @@
 						<input type="text" class="input1 input"/>
 					</div>
 					<field name="date_mode"/>
+					<field name="date_start" attrs="{'invisible': [('date_mode', '!=', 'custom')]}"/>
+					<field name="date_end" attrs="{'invisible': [('date_mode', '!=', 'custom')]}"/>
+					
+					
 					<field name="line_ids">
 						<tree editable="bottom">
 							<field name="name"/>
@@ -26,6 +30,7 @@
 							<field name="field_id"
 								domain="[('model_id','=',model_id),('ttype','in',['monetary','float','integer'])]"/>
 							<field name="filter"/>
+							<field name="date_field_name"/>
 							<field name="color"/>
 							<field name="icon"/>
 							<field name="display"/>

@@ -13,7 +13,7 @@ class Dashboard(models.Model):
         return False
 
 
-    def custom_dashboard(self, cr, uid, start_date, end_date, context=None):
+    def custom_dashboard(self, cr, uid, start_date=None, end_date=None, context=None):
         result={'opd':100,'bill':500,'other':450,'sting':'strings value'}
         return result  
 

@@ -13,6 +13,9 @@ class Dashboard(models.Model):
         return False
 
 
+    def custom_dashboard(self):
+        result={'opd':100,'bill':500,'other':450,'sting':'strings value'}
+        return result  
 
     def _compute_field_list(self):
         dashboard = self.env['dashboard.settings'].search([], limit=1, order='id desc')

@@ -4,7 +4,7 @@
     "author" : 'Helmi Dhaoui',
     'website' : 'http://globalservicescompany.net',
     "depends": [
-        'base'
+        'base','leih'
     ],
     "category": "Management",
     "data": [

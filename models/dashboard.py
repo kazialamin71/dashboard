@@ -1,6 +1,6 @@
 from openerp import models, fields, api
 import datetime
-from datetime import date
+from datetime import date, timedelta
 
 
 class Dashboard(models.Model):

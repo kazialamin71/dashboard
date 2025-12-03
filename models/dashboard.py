@@ -53,15 +53,20 @@ class Dashboard(models.Model):
 
         # Dental Bill
         self.env.cr.execute("""
-            SELECT COUNT(br.id), SUM(br.grand_total)
+            SELECT COUNT(br.id), SUM(br.grand_total),SUM(mr.amount) AS total_paid_amount
             FROM bill_register br
             JOIN bill_register_line brl ON brl.bill_register_id = br.id
+            LEFT JOIN leih_money_receipt mr ON mr.bill_id = br.id AND mr.state = 'confirm'
             WHERE br.state='confirmed'
             AND br.create_date >= %s AND br.create_date <= %s
             AND brl.department ILIKE 'dental'
         """, (st, en))
-        c, a = self.env.cr.fetchone()
-        result['dental_income'] = {'count': c or 0, 'amount': a or 0}
+        count, total, paid = self.env.cr.fetchone()
+        result['dental_income'] = {
+            'count': count or 0,
+            'amount': total or 0,
+            'paid': paid or 0,
+        }
 
 
         # Physiotherapy OPD
@@ -79,17 +84,334 @@ class Dashboard(models.Model):
 
         # Physiotherapy bill
         self.env.cr.execute("""
-            SELECT COUNT(br.id), SUM(br.grand_total)
-            FROM bill_register br
-            JOIN bill_register_line brl ON brl.bill_register_id = br.id
-            WHERE br.state='confirmed'
-            AND br.create_date >= %s AND br.create_date <= %s
-            AND brl.department ILIKE 'physiot'
+        SELECT 
+        COUNT(DISTINCT br.id) AS bill_count,
+        SUM(br.grand_total) AS total_bill_amount,
+        SUM(mr.amount) AS total_paid_amount
+        FROM bill_register br
+        JOIN bill_register_line brl ON brl.bill_register_id = br.id
+        LEFT JOIN leih_money_receipt mr ON mr.bill_id = br.id AND mr.state = 'confirm'
+        WHERE br.state = 'confirmed'
+        AND br.create_date >= %s AND br.create_date <= %s
+        AND brl.department ILIKE 'physiot'
         """, (st, en))
-        c, a = self.env.cr.fetchone()
-        result['physiotherapy_bill'] = {'count': c or 0, 'amount': a or 0}
+
+        count, total, paid = self.env.cr.fetchone()
+
+        result['physiotherapy_bill'] = {
+            'count': count or 0,
+            'amount': total or 0,
+            'paid': paid or 0,
+        }
+
+        #admission income
+        self.env.cr.execute("""
+        SELECT
+            COUNT(DISTINCT adm.id) AS admission_count,
+            SUM(adm.grand_total) AS total_admission_amount,
+            SUM(mr.amount) AS total_paid_amount
+        FROM leih_admission adm
+        LEFT JOIN leih_money_receipt mr 
+            ON mr.admission_id = adm.id 
+            AND mr.state = 'confirm'
+        WHERE adm.state = 'activated'
+        AND adm.date >= %s AND adm.date <= %s
+        """, (st, en))
+
+        count, total, paid = self.env.cr.fetchone()
+
+        result['admission'] = {
+            'count': count or 0,
+            'amount': total or 0,
+            'paid': paid or 0,
+        }
+
+        #Number of Surgery
+
+        self.env.cr.execute("""
+        SELECT 
+        COUNT(*) AS surgery_count
+        FROM leih_admission
+        WHERE operation_date IS NOT NULL
+        AND operation_date >= %s AND operation_date <= %s
+        """, (st, en))
+
+        (surgery_count,) = self.env.cr.fetchone()
+
+        result['surgery'] = {
+            'count': surgery_count or 0,
+        }
+
+
+
+        #optics income
+        self.env.cr.execute("""
+        SELECT
+        COUNT(DISTINCT os.id) AS sale_count,
+        SUM(os.grand_total) AS total_amount,
+        SUM(mr.amount) AS total_paid
+        FROM optics_sale os
+        LEFT JOIN leih_money_receipt mr
+        ON mr.optics_sale_id = os.id
+        AND mr.state = 'confirm'
+        WHERE os.date >= %s AND os.date <= %s
+        """, (st, en))
+
+        count, amount, paid = self.env.cr.fetchone()
+
+        result['optics_income'] = {
+            'count': count or 0,
+            'amount': amount or 0,
+            'paid': paid or 0,
+        }
+
+        # Investigation Income
+        self.env.cr.execute("""
+        SELECT 
+        COUNT(DISTINCT br.id) AS bill_count,
+        SUM(br.grand_total) AS total_amount,
+        SUM(mr.amount) AS total_paid
+        FROM bill_register br
+        JOIN bill_register_line brl 
+        ON brl.bill_register_id = br.id
+        LEFT JOIN leih_money_receipt mr 
+        ON mr.bill_id = br.id 
+        AND mr.state = 'confirm'
+        WHERE br.state = 'confirmed'
+        AND br.create_date >= %s 
+        AND br.create_date <= %s
+        AND brl.department NOT ILIKE 'dental'
+        AND brl.department NOT ILIKE 'physiot'
+        """, (st, en))
+
+        count, total, paid = self.env.cr.fetchone()
+
+        result['investigation_income'] = {
+            'count': count or 0,
+            'amount': total or 0,
+            'paid': paid or 0,
+        }
+
+
+        #Pharmacy Income
+        self.env.cr.execute("""
+        SELECT
+        COUNT(DISTINCT po.id) AS order_count,
+        SUM(pol.price_subtotal) AS total_subtotal
+        FROM pos_order po
+        JOIN pos_order_line pol 
+            ON pol.order_id = po.id
+        WHERE po.date_order >= %s 
+        AND po.date_order <= %s
+        """, (st, en))
+
+        order_count, subtotal = self.env.cr.fetchone()
+
+        result['pos_income'] = {
+        'count': order_count or 0,
+        'subtotal': subtotal or 0,
+        }
+
+        # import pdb;pdb.set_trace()
+        return result
+
+
+
+        #Discount
+
+    @api.model
+    def doctor_income(self, start_date=None, end_date=None):
+        if start_date:
+            start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+        if end_date:
+            end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+       
+
+        # fallback dates
+        st = (start_date or date.today()).strftime('%Y-%m-%d 00:00:00')
+        en = (end_date or date.today()).strftime('%Y-%m-%d 23:59:59')
+
+        result = {}
+        self.env.cr.execute("""
+        SELECT
+        dp.doctor_id,
+        dp.name AS doctor_name,
+        SUM(total_income) AS combined_income,
+        SUM(total_count) AS combined_count
+        FROM (
+        SELECT
+            la.ref_doctors AS doctor_id,
+            SUM(la.grand_total) AS total_income,
+            COUNT(la.id) AS total_count
+        FROM leih_admission la
+        WHERE la.state = 'activated'
+        AND la.date >= %s AND la.date <= %s
+        GROUP BY la.ref_doctors
+
+        UNION ALL
+        SELECT
+            br.ref_doctors AS doctor_id,
+            SUM(br.grand_total) AS total_income,
+            COUNT(br.id) AS total_count
+        FROM bill_register br
+        JOIN bill_register_line brl
+            ON brl.bill_register_id = br.id
+        JOIN examination_entry ee
+            ON ee.id = brl.name
+        JOIN diagnosis_department dd
+            ON dd.id = ee.department
+        WHERE br.state = 'confirmed'
+        AND br.ref_doctors IS NOT NULL
+        AND br.create_date >= %s AND br.create_date <= %s
+        AND dd.name ILIKE ANY (ARRAY[
+            'Retinal Procedure',
+            'minor-ot',
+            'retinal surgery',
+            'other surgery'
+        ])
+        GROUP BY br.ref_doctors
+        ) AS combined
+
+        JOIN doctors_profile dp
+        ON dp.id = combined.doctor_id
+
+        GROUP BY dp.doctor_id, dp.name
+        ORDER BY combined_income DESC
+        """, (st, en, st, en))
+
+        rows = self.env.cr.fetchall()
+
+        result['doctor_total_income'] = [
+            {
+                'doctor_id': r[0],
+                'doctor_name': r[1],
+                'income': r[2] or 0,
+                'count': r[3] or 0,
+            }
+            for r in rows
+        ]
 
         return result
+
+
+    
+
+    @api.model
+    def doctor_dental_income(self, start_date=None, end_date=None):
+        if start_date:
+            start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+        if end_date:
+            end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+
+        st = (start_date or date.today()).strftime('%Y-%m-%d 00:00:00')
+        en = (end_date or date.today()).strftime('%Y-%m-%d 23:59:59')
+
+        dental_pattern = '%dental%'
+
+        query = """
+            SELECT
+                COALESCE(dp.id, 0) AS doctor_id,
+                COALESCE(dp.name, 'Undefined') AS doctor_name,
+                SUM(br.grand_total) AS income,
+                COUNT(DISTINCT br.id) AS bill_count
+            FROM bill_register br
+            JOIN bill_register_line brl
+                ON brl.bill_register_id = br.id
+            JOIN examination_entry ee
+                ON ee.id = brl.name
+            JOIN diagnosis_department dd
+                ON dd.id = ee.department
+            LEFT JOIN doctors_profile dp
+                ON dp.id = br.ref_doctors
+
+            WHERE br.state = 'confirmed'
+            AND br.create_date >= %s
+            AND br.create_date <= %s
+            AND dd.name ILIKE %s
+
+            GROUP BY dp.id, dp.name
+            ORDER BY income DESC
+        """
+
+        self.env.cr.execute(query, (st, en,dental_pattern))
+        rows = self.env.cr.fetchall()
+
+        return {
+            'dental_doctor_income': [
+                {
+                    'doctor_id': r[0],
+                    'doctor_name': r[1],
+                    'income': r[2] or 0,
+                    'count': int(r[3] or 0),
+                }
+                for r in rows
+            ]
+        
+        }
+
+
+
+    @api.model
+    def physiotherapist_income(self, start_date=None, end_date=None):
+        if start_date:
+            start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+        if end_date:
+            end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+
+        # Fallbacks
+        st = (start_date or date.today()).strftime('%Y-%m-%d 00:00:00')
+        en = (end_date or date.today()).strftime('%Y-%m-%d 23:59:59')
+        physio_pattern = '%physioth%'
+
+        query = """
+            SELECT
+                COALESCE(dp.id, 0) AS doctor_id,
+                COALESCE(dp.name, 'Undefined') AS doctor_name,
+                SUM(br.grand_total) AS income,
+                COUNT(DISTINCT br.id) AS bill_count
+            FROM bill_register br
+            JOIN bill_register_line brl
+                ON brl.bill_register_id = br.id
+            JOIN examination_entry ee
+                ON ee.id = brl.name
+            JOIN diagnosis_department dd
+                ON dd.id = ee.department
+            LEFT JOIN doctors_profile dp
+                ON dp.id = br.ref_doctors
+
+            WHERE br.state = 'confirmed'
+            AND br.create_date >= %s
+            AND br.create_date <= %s
+            AND dd.name ILIKE %s
+
+            GROUP BY dp.id, dp.name
+            ORDER BY income DESC
+        """
+
+        self.env.cr.execute(query, (st, en,physio_pattern))
+        rows = self.env.cr.fetchall()
+
+        # import pdb;pdb.set_trace()
+
+        return {
+            'physiotherapist_income': [
+                {
+                    'doctor_id': r[0],
+                    'doctor_name': r[1],
+                    'income': r[2] or 0,
+                    'count': r[3] or 0,
+                }
+                for r in rows
+            ]
+        }
+
+
+
+
+
+
+
+
 
     
     # def cash_collection(self,cr,uid,context=None):
@@ -100,6 +422,10 @@ class Dashboard(models.Model):
         last_slices_list = []
 
         # self.custom_dashboard()
+        # eye_doctor_income=self.doctor_income()
+        # dental_income=self.doctor_dental_income()
+        # therapy_income=self.physiotherapist_income()
+        # import pdb;pdb.set_trace()
 
         # Determine dashboard date range
         if dashboard.date_mode == 'yesterday':

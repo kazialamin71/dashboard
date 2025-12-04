@@ -69,17 +69,24 @@ class Dashboard(models.Model):
         }
 
 
-        # Physiotherapy OPD
         self.env.cr.execute("""
-            SELECT COUNT(ot.id), SUM(otl.total_amount)
-            FROM opd_ticket ot
-            JOIN opd_ticket_line otl ON otl.opd_ticket_id = ot.id
-            WHERE ot.state='confirmed'
-            AND ot.create_date >= %s AND ot.create_date <= %s
-            AND otl.department ILIKE 'physiot'
+        SELECT 
+        COUNT(ot.id) AS ticket_count, 
+        SUM(otl.total_amount) AS total_amount
+        FROM opd_ticket ot
+        JOIN opd_ticket_line otl ON otl.opd_ticket_id = ot.id
+        WHERE ot.state = 'confirmed'
+        AND ot.date >= %s AND ot.date <= %s
+        AND otl.department ILIKE '%%physiotherapy%%'
         """, (st, en))
-        c, a = self.env.cr.fetchone()
-        result['physiotherapy_opd'] = {'count': c or 0, 'amount': a or 0}
+
+        count, amount = self.env.cr.fetchone()
+
+        result['physiotherapy_opd'] = {
+        'count': count or 0,
+        'amount': amount or 0,
+        }
+
 
 
         # Physiotherapy bill
@@ -93,7 +100,7 @@ class Dashboard(models.Model):
         LEFT JOIN leih_money_receipt mr ON mr.bill_id = br.id AND mr.state = 'confirm'
         WHERE br.state = 'confirmed'
         AND br.create_date >= %s AND br.create_date <= %s
-        AND brl.department ILIKE 'physiot'
+        AND brl.department ILIKE 'Physiotherapy'
         """, (st, en))
 
         count, total, paid = self.env.cr.fetchone()
@@ -148,7 +155,7 @@ class Dashboard(models.Model):
         self.env.cr.execute("""
         SELECT
         COUNT(DISTINCT os.id) AS sale_count,
-        SUM(os.grand_total) AS total_amount,
+        SUM(os.total) AS total_amount,
         SUM(mr.amount) AS total_paid
         FROM optics_sale os
         LEFT JOIN leih_money_receipt mr
@@ -212,8 +219,47 @@ class Dashboard(models.Model):
         'subtotal': subtotal or 0,
         }
 
+  
+
+        #cash collection
+
+        self.env.cr.execute("""
+        SELECT
+        COUNT(mr.id) AS receipt_count,
+        SUM(mr.amount) AS total_collected_amount
+        FROM leih_money_receipt mr
+        WHERE mr.state = 'confirm'
+        AND mr.create_date >= %s AND mr.create_date <= %s
+        """, (st, en))
+
+        count, total = self.env.cr.fetchone()
+
+        result['money_receipt'] = {
+        'count': count or 0,
+        'amount': total or 0,
+        }
+
+        #Discount
+        self.env.cr.execute("""
+        SELECT
+        COUNT(d.id) AS discount_count,
+        SUM(d.total_discount) AS total_discount_amount
+        FROM discount d
+        WHERE d.state = 'approve'
+        AND d.date >= %s AND d.date <= %s
+        """, (st, en))
+
+        count, total_discount = self.env.cr.fetchone()
+
+        result['discount'] = {
+        'count': count or 0,
+        'total_discount': total_discount or 0,
+        }
+
+
         # import pdb;pdb.set_trace()
         return result
+
 
 
 

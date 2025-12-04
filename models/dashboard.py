@@ -16,14 +16,14 @@ class Dashboard(models.Model):
 
     def custom_dashboard(self, start_date=None, end_date=None):
         if start_date:
-            formatted_start_date = datetime.datetime.strptime(start_date.split("T")[0], "%Y-%m-%d")
+            start_date = datetime.datetime.strptime(start_date.split("T")[0], "%Y-%m-%d")
         if end_date:
-            formatted_end_date = datetime.datetime.strptime(end_date.split("T")[0], "%Y-%m-%d")
+            end_date = datetime.datetime.strptime(end_date.split("T")[0], "%Y-%m-%d")
        
 
         # fallback dates
-        st = (formatted_start_date or date.today()).strftime('%Y-%m-%d 00:00:00')
-        en = (formatted_end_date or date.today()).strftime('%Y-%m-%d 23:59:59')
+        st = (start_date or date.today()).strftime('%Y-%m-%d 00:00:00')
+        en = (end_date or date.today()).strftime('%Y-%m-%d 23:59:59')
 
         result = {}
 
@@ -262,6 +262,7 @@ class Dashboard(models.Model):
         merged_dict.update(self.doctor_income(start_date, end_date))
         merged_dict.update(self.doctor_dental_income(start_date, end_date))
         merged_dict.update(self.physiotherapist_income(start_date, end_date))
+        # import pdb;pdb.set_trace()
         return merged_dict
 
 
@@ -271,12 +272,7 @@ class Dashboard(models.Model):
 
     @api.model
     def doctor_income(self, start_date=None, end_date=None):
-        if start_date:
-            start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
-        if end_date:
-            end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
-       
-
+        
         # fallback dates
         st = (start_date or date.today()).strftime('%Y-%m-%d 00:00:00')
         en = (end_date or date.today()).strftime('%Y-%m-%d 23:59:59')
@@ -348,10 +344,10 @@ class Dashboard(models.Model):
 
     @api.model
     def doctor_dental_income(self, start_date=None, end_date=None):
-        if start_date:
-            start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
-        if end_date:
-            end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+        # if start_date:
+        #     start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+        # if end_date:
+        #     end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
 
         st = (start_date or date.today()).strftime('%Y-%m-%d 00:00:00')
         en = (end_date or date.today()).strftime('%Y-%m-%d 23:59:59')
@@ -403,10 +399,10 @@ class Dashboard(models.Model):
 
     @api.model
     def physiotherapist_income(self, start_date=None, end_date=None):
-        if start_date:
-            start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
-        if end_date:
-            end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+        # if start_date:
+        #     start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+        # if end_date:
+        #     end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
 
         # Fallbacks
         st = (start_date or date.today()).strftime('%Y-%m-%d 00:00:00')

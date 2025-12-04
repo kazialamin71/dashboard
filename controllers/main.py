@@ -4,7 +4,15 @@ from openerp.http import request,Controller, route
 import json
 from openerp.tools.translate import _
 
+
 class Dashboard(http.Controller):
+
+    @http.route('/dashboard/data', type='http', auth='none', methods=['POST', 'GET'])
+    def get_dashboard_data(self, start_date=None, end_date=None, **kwargs):
+        dashboard_model = request.env['dashboard.dashboard'].sudo()
+        final_result = dashboard_model.custom_dashboard(start_date=start_date, end_date=end_date)
+        result=json.dumps(final_result)
+        return result
     
     def get_compare(self,chart):
         return request.env['dashboard.settings.chart'].search([('sequence','=',chart.sequence),('display','=',True),('display_type','=',chart.display_type),('dashboard_id','=',chart.dashboard_id.id)],order="id desc")

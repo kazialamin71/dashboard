@@ -13,17 +13,17 @@ class Dashboard(models.Model):
         return False
 
 
-    @api.model
+
     def custom_dashboard(self, start_date=None, end_date=None):
         if start_date:
-            start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+            formatted_start_date = datetime.datetime.strptime(start_date.split("T")[0], "%Y-%m-%d")
         if end_date:
-            end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+            formatted_end_date = datetime.datetime.strptime(end_date.split("T")[0], "%Y-%m-%d")
        
 
         # fallback dates
-        st = (start_date or date.today()).strftime('%Y-%m-%d 00:00:00')
-        en = (end_date or date.today()).strftime('%Y-%m-%d 23:59:59')
+        st = (formatted_start_date or date.today()).strftime('%Y-%m-%d 00:00:00')
+        en = (formatted_end_date or date.today()).strftime('%Y-%m-%d 23:59:59')
 
         result = {}
 
@@ -255,10 +255,14 @@ class Dashboard(models.Model):
         'count': count or 0,
         'total_discount': total_discount or 0,
         }
-
-
-        # import pdb;pdb.set_trace()
-        return result
+        # result['eye_doctor']=self.doctor_income(start_date,end_date)
+        # result['dental_doctor']=self.doctor_dental_income(start_date,end_date)
+        # result['physiotherapis']=self.physiotherapist_income(start_date,end_date)
+        merged_dict = result.copy()  # start with your main dict
+        merged_dict.update(self.doctor_income(start_date, end_date))
+        merged_dict.update(self.doctor_dental_income(start_date, end_date))
+        merged_dict.update(self.physiotherapist_income(start_date, end_date))
+        return merged_dict
 
 
 

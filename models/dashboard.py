@@ -16,9 +16,9 @@ class Dashboard(models.Model):
 
     def custom_dashboard(self, start_date=None, end_date=None):
         if start_date:
-            start_date = datetime.datetime.strptime(start_date.split("T")[0], "%Y-%m-%d")
+            start_date = datetime.datetime.strptime(start_date[:10], "%Y-%m-%d")
         if end_date:
-            end_date = datetime.datetime.strptime(end_date.split("T")[0], "%Y-%m-%d")
+            end_date = datetime.datetime.strptime(end_date[:10], "%Y-%m-%d")
        
 
         # fallback dates
